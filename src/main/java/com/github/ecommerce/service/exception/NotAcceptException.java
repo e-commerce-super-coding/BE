@@ -2,21 +2,14 @@ package com.github.ecommerce.service.exception;
 
 
 import com.github.ecommerce.web.advice.ErrorCode;
+import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
+@Getter
 public class NotAcceptException extends RuntimeException{
-    public NotAcceptException(String message) {
-        super(message);
-    }
+    private final HttpStatus httpStatus;
     public NotAcceptException(ErrorCode errorCode) {
         super(errorCode.getErrorMessage());
         this.httpStatus = errorCode.getHttpStatus();
     }
-
-    private HttpStatus httpStatus;
-
-    public HttpStatus getHttpStatus() {
-        return httpStatus;
-    }
-
 }

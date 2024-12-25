@@ -2,8 +2,7 @@ package com.github.ecommerce.web.dto.mypage;
 
 import lombok.*;
 
-@Setter
-@Getter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

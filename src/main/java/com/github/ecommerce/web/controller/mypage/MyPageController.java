@@ -1,15 +1,17 @@
 package com.github.ecommerce.web.controller.mypage;
 
+import com.github.ecommerce.service.exception.BadRequestException;
+import com.github.ecommerce.service.exception.NotAcceptException;
 import com.github.ecommerce.service.exception.S3Exception;
+import com.github.ecommerce.service.exception.S3UpLordException;
 import com.github.ecommerce.service.mypage.MyPageService;
 import com.github.ecommerce.service.security.CustomUserDetails;
+import com.github.ecommerce.web.advice.ErrorCode;
 import com.github.ecommerce.web.dto.mypage.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,12 +31,6 @@ public class MyPageController {
     public ResponseEntity<UserInfoDTO> getUserInfo(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        //토큰에서 user 정보 가져오기
-        if(userDetails == null) {
-            return ResponseEntity
-                    .status(HttpStatus.UNAUTHORIZED)
-                    .body(new UserInfoDTO("로그인된 사용자만 이용하실 수 있습니다.", HttpStatus.UNAUTHORIZED.value()));
-        }
         Integer userId = userDetails.getUserId();
 
         //유저 정보 가지고오기
@@ -49,18 +45,11 @@ public class MyPageController {
             @PathVariable String id, @ModelAttribute UserInfoDTO userInfo,
             @RequestParam(value = "image", required = false) MultipartFile image
     ) {
-        //토큰에서 user 정보 가져오기
-        if(userDetails == null) {
-            return ResponseEntity
-                    .status(HttpStatus.UNAUTHORIZED)
-                    .body(new UserInfoDTO("로그인된 사용자만 이용하실 수 있습니다.", HttpStatus.UNAUTHORIZED.value()));
-        }
+
         Integer userId = userDetails.getUserId();
 
         if(!userId.equals(Integer.valueOf(id))){
-            return ResponseEntity
-                    .status(HttpStatus.UNAUTHORIZED)
-                    .body(new UserInfoDTO("본인의 정보만 수정할 수 있습니다.", HttpStatus.UNAUTHORIZED.value()));
+            throw new NotAcceptException(ErrorCode.ACCESS_DENIED);
         }
 
         UserInfoDTO result = null;
@@ -68,13 +57,9 @@ public class MyPageController {
             //유저 정보 수정하기
             result = myPageService.putUserInfo(id, userInfo, image);
         } catch (S3Exception e) {
-            return ResponseEntity
-                    .status( e.getStatusCode())
-                    .body(new UserInfoDTO(e.getMessage(), e.getStatusCode()));
+            throw new S3UpLordException(ErrorCode.S3_ERROR);
         } catch (Exception e) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new UserInfoDTO(MyPageStatus.USER_INFO_ERROR.getMessage(), MyPageStatus.USER_INFO_ERROR.getCode()));
+            throw new NotAcceptException(ErrorCode.USER_INFO_PUT_ERROR);
         }
         return ResponseEntity.ok(result);
     }
@@ -85,12 +70,7 @@ public class MyPageController {
     public ResponseEntity<CartListDTO> getCartItems(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        //토큰에서 user 정보 가져오기
-        if(userDetails == null) {
-            return ResponseEntity
-                    .status(HttpStatus.UNAUTHORIZED)
-                    .body(new CartListDTO(MyPageStatus.USER_INFO_ERROR.getMessage(), MyPageStatus.USER_INFO_ERROR.getCode()));
-        }
+
         Integer userId = userDetails.getUserId();
 
         //장바구니 목록 가지고오기
@@ -105,12 +85,7 @@ public class MyPageController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable String id
     ) {
-        // 토큰에서 user 정보 가져오기
-        if(userDetails == null) {
-            return ResponseEntity
-                    .status(HttpStatus.UNAUTHORIZED)
-                    .body(new CartListDTO("로그인된 사용자만 이용하실 수 있습니다.", HttpStatus.UNAUTHORIZED.value()));
-        }
+
         Integer userId = userDetails.getUserId();
 
         //장바구니 상세 가지고오기
@@ -121,45 +96,33 @@ public class MyPageController {
 
     // 장바구니 옵션 수정
     @PutMapping("/putCartOption")
-    public ResponseEntity<DefaultDTO> putCartOption(
+    public ResponseEntity<String> putCartOption(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody CartDetailDTO cartDetailDTO
     ) {
-        // 토큰에서 user 정보 가져오기
-        if(userDetails == null) {
-            return ResponseEntity
-                    .status(HttpStatus.UNAUTHORIZED)
-                    .body(new DefaultDTO("로그인된 사용자만 이용하실 수 있습니다.", HttpStatus.UNAUTHORIZED.value()));
-        }
+
         Integer userId = userDetails.getUserId();
 
         //장바구니 옵션 수정
-        DefaultDTO result = myPageService.putCartOption(userId, cartDetailDTO);
+        String result = myPageService.putCartOption(userId, cartDetailDTO);
 
         return ResponseEntity.ok(result);
     }
 
     //  장바구니  삭제
     @DeleteMapping("/deleteCartItems")
-    public ResponseEntity<DefaultDTO> deleteCartItems(
+    public ResponseEntity<String> deleteCartItems(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody List<CartDetailDTO> cartDetailDTOs
     ) {
-        // 토큰에서 user 정보 가져오기
-        if(userDetails == null) {
-            return ResponseEntity
-                    .status(HttpStatus.UNAUTHORIZED)
-                    .body(new DefaultDTO("로그인된 사용자만 이용하실 수 있습니다.", HttpStatus.UNAUTHORIZED.value()));
-        }
+
         Integer userId = userDetails.getUserId();
 
         if(cartDetailDTOs.size() == 0){
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(new DefaultDTO(MyPageStatus.CART_ID_IS_NULL));
+            throw new BadRequestException(ErrorCode.CART_ID_IS_NULL);
         }
         //장바구니 삭제
-        DefaultDTO result = myPageService.deleteCartItems(userId, cartDetailDTOs);
+        String result = myPageService.deleteCartItems(userId, cartDetailDTOs);
 
         return ResponseEntity.ok(result);
     }
@@ -170,12 +133,6 @@ public class MyPageController {
     public ResponseEntity<PaymentListDTO> getPaymentList(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        // 토큰에서 user 정보 가져오기
-        if (userDetails == null) {
-            return ResponseEntity
-                    .status(HttpStatus.UNAUTHORIZED)
-                    .body(new PaymentListDTO("로그인된 사용자만 이용하실 수 있습니다.", HttpStatus.UNAUTHORIZED.value()));
-        }
         Integer userId = userDetails.getUserId();
 
         //결제내역 목록 가지고오기
@@ -190,12 +147,6 @@ public class MyPageController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable String id
     ) {
-        // 토큰에서 user 정보 가져오기
-        if (userDetails == null) {
-            return ResponseEntity
-                    .status(HttpStatus.UNAUTHORIZED)
-                    .body(new PaymentListDTO("로그인된 사용자만 이용하실 수 있습니다.", HttpStatus.UNAUTHORIZED.value()));
-        }
         Integer userId = userDetails.getUserId();
 
         //결제내역 상세 가지고오기

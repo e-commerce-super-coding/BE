@@ -1,14 +1,17 @@
 package com.github.ecommerce.service.exception;
 
+import com.github.ecommerce.web.advice.ErrorCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.springframework.http.HttpStatus;
+
+@Getter
 public class S3Exception extends RuntimeException{
-    private final int statusCode;
-
-    public S3Exception(String message, int statusCode) {
-        super(message); // 부모 클래스의 생성자 호출
-        this.statusCode = statusCode;
-    }
-
-    public int getStatusCode() {
-        return statusCode;
+    private final HttpStatus httpStatus;
+    private final String key;
+    public S3Exception(ErrorCode errorCode,String key) {
+        super(errorCode.getErrorMessage());
+        this.httpStatus = errorCode.getHttpStatus();
+        this.key = key;
     }
 }

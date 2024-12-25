@@ -2,8 +2,10 @@ package com.github.ecommerce.web.controller.auth;
 
 
 import com.github.ecommerce.service.auth.AuthService;
+import com.github.ecommerce.service.exception.InvalidValueException;
 import com.github.ecommerce.service.exception.NotAcceptException;
 import com.github.ecommerce.service.exception.NotFoundException;
+import com.github.ecommerce.web.advice.ErrorCode;
 import com.github.ecommerce.web.dto.auth.LoginRequest;
 import com.github.ecommerce.web.dto.auth.SignRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,14 +22,15 @@ import org.springframework.web.multipart.MultipartFile;
 public class AuthController {
     private final AuthService authService;
 
+    @PostMapping(value = "/email")
+    public ResponseEntity<String> checkEmail(@Valid@RequestBody SignRequest signUpRequest, BindingResult bindingResult){
+        return null;
+    }
+
     @PostMapping(value = "/signup")
     public ResponseEntity<String> register(@RequestParam(value = "profileImage", required = false ) MultipartFile profileImage, @Valid@RequestBody SignRequest signUpRequest, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            StringBuilder errorMessages = new StringBuilder("회원가입 실패: ");
-            bindingResult.getFieldErrors().forEach(error ->
-                    errorMessages.append(error.getDefaultMessage()).append(" ")
-            );
-            return ResponseEntity.badRequest().body(errorMessages.toString());
+            throw new InvalidValueException(ErrorCode.REGISTER_FAILURE);
         }
         boolean isSuccess = authService.signUp(signUpRequest,profileImage);
         return ResponseEntity.ok(isSuccess ? "회원가입 성공하였습니다." : "회원가입 실패하였습니다.");
@@ -46,9 +49,9 @@ public class AuthController {
             String message = authService.secession();
             return ResponseEntity.ok(message);
         } catch (NotAcceptException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            throw new NotAcceptException(ErrorCode.USER_SECESSION_FAILURE);
         } catch (NotFoundException e) {
-            return ResponseEntity.notFound().build();
+            throw new NotFoundException(ErrorCode.SECESSION_NOT_FOUND);
         }
     }
 

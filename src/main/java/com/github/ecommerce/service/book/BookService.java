@@ -2,6 +2,8 @@ package com.github.ecommerce.service.book;
 
 import com.github.ecommerce.data.entity.book.Book;
 import com.github.ecommerce.data.repository.book.BookRepository;
+import com.github.ecommerce.service.exception.NotFoundException;
+import com.github.ecommerce.web.advice.ErrorCode;
 import com.github.ecommerce.web.dto.book.BookDetailResponse;
 import com.github.ecommerce.web.dto.book.BookResponse;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +31,7 @@ public class BookService {
 
     public BookDetailResponse getBookDetail(Integer bookId, Integer amount) {
         Book book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new IllegalArgumentException("Book not found"));
+                .orElseThrow(() -> new NotFoundException(ErrorCode.BOOK_NOT_FOUNDED));
 
 
         return new BookDetailResponse(

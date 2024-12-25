@@ -12,9 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/books")
 public class BookController {
-
     private final BookService bookService;
-
     // 전체 도서 조회
     @GetMapping
     public ResponseEntity<Page<BookResponse>> getAllBooks(
@@ -24,7 +22,6 @@ public class BookController {
         Page<BookResponse> books = bookService.getAllBooks(page, size);
         return ResponseEntity.ok(books);
     }
-
     // 도서 상세 조회
     @GetMapping("/{id}")
     public ResponseEntity<BookDetailResponse> getBookDetail(@PathVariable Integer id,
@@ -32,7 +29,6 @@ public class BookController {
         BookDetailResponse bookDetailResponse = bookService.getBookDetail(id, amount);
         return ResponseEntity.ok(bookDetailResponse);
     }
-
     // 카테고리별 필터 조회
     @GetMapping("/category/{category}")
     public ResponseEntity<Page<BookResponse>> getBooksByCategory(@PathVariable String category,

@@ -1,8 +1,14 @@
 package com.github.ecommerce.service.exception;
 
-public class NotFoundException extends RuntimeException{
-    public NotFoundException(String message) {
-        super(message);
-    }
+import com.github.ecommerce.web.advice.ErrorCode;
+import lombok.Getter;
+import org.springframework.http.HttpStatus;
 
+@Getter
+public class NotFoundException extends RuntimeException{
+    private final HttpStatus httpStatus;
+    public NotFoundException(ErrorCode errorCode) {
+        super(errorCode.getErrorMessage());
+        this.httpStatus = errorCode.getHttpStatus();
+    }
 }

@@ -1,11 +1,13 @@
 package com.github.ecommerce.web.filter;
 
 import com.github.ecommerce.config.security.JwtTokenProvider;
+import com.github.ecommerce.web.advice.ErrorCode;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.apache.coyote.BadRequestException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -17,11 +19,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String requestURI = request.getRequestURI(); // 요청 URI를 가져옴
-        // /v3/api-docs 경로는 JWT 인증을 통과하도록 설정
+        String requestURI = request.getRequestURI();
+
         if (requestURI.equals("/v3/api-docs") || requestURI.startsWith("/swagger-ui")) {
-            filterChain.doFilter(request, response); // 필터 체인을 계속 진행
-            return; // 더 이상 처리하지 않음
+            filterChain.doFilter(request, response);
+            return;
         }
 
         String jwtToken = jwtTokenProvider.resolveToken(request);

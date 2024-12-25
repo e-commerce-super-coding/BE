@@ -6,8 +6,12 @@ import com.github.ecommerce.data.entity.payment.Payment;
 import com.github.ecommerce.data.repository.cart.CartRepository;
 import com.github.ecommerce.data.repository.mypage.UserRepository;
 import com.github.ecommerce.data.repository.payment.PaymentRepository;
+import com.github.ecommerce.service.exception.BadRequestException;
+import com.github.ecommerce.service.exception.NotAcceptException;
 import com.github.ecommerce.service.exception.NotFoundException;
 import com.github.ecommerce.service.s3Image.AwsS3Service;
+import com.github.ecommerce.web.advice.ErrorCode;
+import com.github.ecommerce.web.advice.ErrorResult;
 import com.github.ecommerce.web.dto.mypage.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,13 +41,9 @@ public class MyPageService {
 
     //유저 정보 가지고오기
     public UserInfoDTO getUserInfo(Integer userId) {
-        User user = userRepository.findById(userId).orElse(null);
-        if(user == null) {
-            return new UserInfoDTO(MyPageStatus.USER_NOT_FOUNDED);
-        }
+        User user = userRepository.findById(userId).orElseThrow(()->new NotFoundException(ErrorCode.USER_NOT_FOUNDED));
 
         UserInfoDTO result = userInfoMapping(user);
-        result.setStatus(new DefaultDTO(MyPageStatus.USER_INFO_RETURN));
 
         return result;
     }
@@ -71,10 +71,7 @@ public class MyPageService {
     public UserInfoDTO putUserInfo(String id, UserInfoDTO userInfo, MultipartFile image) {
 
         Integer userId = Integer.valueOf(id);
-        User user = userRepository.findById(userId).orElse(null);
-        if(user == null) {
-            return new UserInfoDTO(MyPageStatus.USER_NOT_FOUNDED);
-        }
+        User user = userRepository.findById(userId).orElseThrow(()->new NotFoundException(ErrorCode.USER_NOT_FOUNDED));
 
         //file이 들어온다면?
         if(image != null) {
@@ -108,7 +105,6 @@ public class MyPageService {
         }
 
         UserInfoDTO result = userInfoMapping(user);
-        result.setStatus(new DefaultDTO(MyPageStatus.USER_INFO_PUT_RETURN));
 
         return result;
     }
@@ -134,7 +130,6 @@ public class MyPageService {
 
         CartListDTO result = new CartListDTO();
         result.setCartItems(items);
-        result.setStatus(new DefaultDTO(MyPageStatus.CART_ITEMS_RETURN));
         return result;
     }
 
@@ -143,9 +138,9 @@ public class MyPageService {
         Integer cartId = Integer.valueOf(id);
         Cart item = cartRepository.findByIdFetchJoin(cartId).orElse(null);
         if(item == null) {
-            return new CartListDTO(MyPageStatus.CART_NOT_FOUNDED);
+            throw new NotFoundException(ErrorCode.CART_NOT_FOUNDED);
         }else if(!item.getUser().getUserId().equals(userId)) {
-            return new CartListDTO(MyPageStatus.USER_ERROR_FORBIDDEN);
+            throw new NotAcceptException(ErrorCode.USER_ERROR_FORBIDDEN);
         }
         CartDetailDTO cart = CartDetailDTO.builder()
                 .userId(item.getUser().getUserId())
@@ -164,7 +159,6 @@ public class MyPageService {
         List<CartDetailDTO> carts = new ArrayList<>();
         carts.add(cart);
         CartListDTO result = new CartListDTO();
-        result.setStatus(new DefaultDTO(MyPageStatus.CART_RETURN));
         result.setCartItems(carts);
 
         return result;
@@ -172,36 +166,36 @@ public class MyPageService {
 
     //장바구니 옵션 수정
     @Transactional(transactionManager = "tmJpa1")
-    public DefaultDTO putCartOption(Integer userId, CartDetailDTO cartDetailDTO) {
+    public String putCartOption(Integer userId, CartDetailDTO cartDetailDTO) {
         Cart cartItem = cartRepository.findByIdFetchJoin(cartDetailDTO.getCartId()).orElse(null);
         if(cartItem == null) {
-            return new DefaultDTO(MyPageStatus.CART_ERROR);
+            throw new BadRequestException(ErrorCode.CART_ERROR);
         }else if(!cartItem.getUser().getUserId().equals(userId)){
-            return new DefaultDTO(MyPageStatus.USER_ERROR_FORBIDDEN);
+            throw new NotAcceptException(ErrorCode.USER_ERROR_FORBIDDEN);
         }else if(cartItem.getBook().getStockQuantity() < cartDetailDTO.getQuantity()){
-            return new DefaultDTO(MyPageStatus.CART_QUANTITY_ERROR);
+            throw new NotAcceptException(ErrorCode.CART_QUANTITY_ERROR);
         }
         cartItem.setQuantity(cartDetailDTO.getQuantity());
-        return new DefaultDTO(MyPageStatus.CART_PUT);
+        return "장바구니 정보를 수정하셨습니다.";
     }
 
     //장바구니 삭제
     @Transactional(transactionManager = "tmJpa1")
-    public DefaultDTO deleteCartItems(Integer userId, List<CartDetailDTO>  cartDetailDTOs) {
+    public String deleteCartItems(Integer userId, List<CartDetailDTO>  cartDetailDTOs) {
 
         // 각 항목에 대해 삭제 처리
         for (CartDetailDTO cartDetailDTO : cartDetailDTOs) {
             Cart cartItem = cartRepository.findById(cartDetailDTO.getCartId()).orElse(null);
 
             if(cartItem == null) {
-                return new DefaultDTO(MyPageStatus.CART_ERROR);
+                throw new BadRequestException(ErrorCode.CART_ERROR);
             }else if(!cartItem.getUser().getUserId().equals(userId)){
-                return new DefaultDTO(MyPageStatus.CART_ID_ACCESS_ERROR);
+                throw new NotAcceptException(ErrorCode.CART_ID_ACCESS_ERROR);
             }
             cartRepository.delete(cartItem);
         }
 
-        return new DefaultDTO(MyPageStatus.CART_DELETE);
+        return "선택하신 목록을 지우셨습니다.";
     }
 
 
@@ -211,7 +205,6 @@ public class MyPageService {
         List<Payment> paymentList = paymentRepository.findAllByUser_UserId(userId);
 
         List<PaymentDetailDTO> itmes = paymentList.stream().map(
-                //Payment -> PaymentDetailDTO
                 item -> PaymentDetailDTO.builder()
                         .userId(userId)
                         .paymentId(item.getPaymentId())
@@ -242,7 +235,6 @@ public class MyPageService {
 
         PaymentListDTO result = new PaymentListDTO();
         result.setPayments(itmes);
-        result.setStatus(new DefaultDTO(MyPageStatus.PAYMENT_LIST_RETURN));
         return result;
     }
 
@@ -250,10 +242,7 @@ public class MyPageService {
     public PaymentListDTO getPaymentDetail(Integer userId, String id) {
         Integer paymentId = Integer.valueOf(id);
 
-        Payment payment = paymentRepository.findByIdJoinPaymentProduct(paymentId).orElse(null);
-        if(payment == null) {
-            return new PaymentListDTO(MyPageStatus.PAYMENT_NOT_FOUNDED);
-        }
+        Payment payment = paymentRepository.findByIdJoinPaymentProduct(paymentId).orElseThrow(()->new NotFoundException(ErrorCode.PAYMENT_NOT_FOUNDED));
 
         PaymentDetailDTO detailInfo = PaymentDetailDTO.builder()
                 .userId(userId)
@@ -287,7 +276,6 @@ public class MyPageService {
         payments.add(detailInfo);
 
         PaymentListDTO result = new PaymentListDTO();
-        result.setStatus(new DefaultDTO(MyPageStatus.PAYMENT_RETURN));
         result.setPayments(payments);
 
         return result;

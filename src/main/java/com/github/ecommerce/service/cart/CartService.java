@@ -6,6 +6,8 @@ import com.github.ecommerce.data.entity.cart.Cart;
 import com.github.ecommerce.data.repository.auth.AuthRepository;
 import com.github.ecommerce.data.repository.book.BookRepository;
 import com.github.ecommerce.data.repository.cart.CartRepository;
+import com.github.ecommerce.service.exception.NotFoundException;
+import com.github.ecommerce.web.advice.ErrorCode;
 import com.github.ecommerce.web.dto.cart.CartRequest;
 import com.github.ecommerce.web.dto.cart.CartResponse;
 import lombok.RequiredArgsConstructor;
@@ -15,19 +17,17 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class CartService {
-
     private final CartRepository cartRepository;
     private final BookRepository bookRepository;
     private final AuthRepository authRepository;
-
     @Transactional
     public CartResponse addToCart(CartRequest request, Integer userId) {
 
         User user =authRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUNDED));
 
         Book book = bookRepository.findById(request.getBookId())
-                .orElseThrow(() -> new RuntimeException("Book not found"));
+                .orElseThrow(() -> new NotFoundException(ErrorCode.BOOK_NOT_FOUNDED));
 
         Cart cart = cartRepository.findByBookAndUser(book,user);
 
@@ -55,5 +55,4 @@ public class CartService {
                 (int)savedCart.getBook().getPrice()
         );
     }
-
 }

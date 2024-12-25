@@ -11,28 +11,23 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 
-@Setter
-@Getter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class PaymentDetailDTO {
-
     private Integer userId;
     private Integer paymentId;
     private String paymentCard;
     private String zipCode;
     private String mainAddress;
     private String detailsAddress;
-
     private Integer totalPrice;
     private String receiverName;
     private String receiverPhone;
     private Timestamp paymentDate;
     private Timestamp expectedDelivery;
-
     private List<PaymentProductDTO> paymentProducts;
-
 }
 
 
