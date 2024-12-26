@@ -14,6 +14,7 @@ public enum ErrorCode {
     USER_SECESSION_FAILURE(401,"지금 상태에서 탈퇴 진행을 하실 수 없습니다.", HttpStatus.UNAUTHORIZED),
     LOGIN_FAILURE(406,"로그인 할 수 없습니다.", HttpStatus.NOT_ACCEPTABLE),
     LOGIN_FAILURE2(406,"탈퇴를 하셔서 로그인이 불가능합니다.", HttpStatus.NOT_ACCEPTABLE),
+    LOGIN_FAILURE3(400,"비밀번호가 일치하지 않습니다.", HttpStatus.BAD_REQUEST),
     EXPIRED_TOKEN(401,"발급된 토큰이 만료되었습니다.", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED_TOKEN(401,"발급된 토큰이 만료되었습니다.", HttpStatus.UNAUTHORIZED),
     ENTRY_POINT_FAILURE(401,"인증되지 않은 사용자입니다.", HttpStatus.UNAUTHORIZED),

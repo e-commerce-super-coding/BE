@@ -40,9 +40,6 @@ public class AuthController {
 
     @PostMapping(value = "/signup")
     public ResponseEntity<SignResponse> register(@RequestParam(value = "profileImage", required = false ) MultipartFile profileImage, @Valid@RequestBody SignRequest signUpRequest, BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            throw new InvalidValueException(ErrorCode.REGISTER_FAILURE);
-        }
         boolean isSuccess = authService.signUp(signUpRequest,profileImage);
         return ResponseEntity.ok(isSuccess ? new SignResponse(true,"회원가입 성공하였습니다.") : new SignResponse(false,"회원가입 실패하였습니다."));
     }
@@ -53,14 +50,9 @@ public class AuthController {
             throw new InvalidValueException(ErrorCode.REGISTER_FAILURE);
         }
 
-        try {
             String token = authService.login(loginRequest);
             httpServletResponse.setHeader("Bearer_Token", token);
             return ResponseEntity.ok("로그인이 성공하였습니다.");
-        }catch (Exception e){
-            throw new BadRequestException(ErrorCode.LOGIN_FAILURE);
-        }
-
     }
 
     @GetMapping(value = "/delete")

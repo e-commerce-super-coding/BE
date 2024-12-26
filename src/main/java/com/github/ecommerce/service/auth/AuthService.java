@@ -129,7 +129,7 @@ public class AuthService {
 
         } catch (BadCredentialsException e) {
             log.warn("로그인 실패: 잘못된 비밀번호");
-            throw new NotAcceptException(ErrorCode.LOGIN_FAILURE);
+            throw new NotAcceptException(ErrorCode.LOGIN_FAILURE3);
         } catch (Exception e) {
             log.error("로그인 처리 중 오류 발생: {}", e.getMessage());
             throw new NotAcceptException(ErrorCode.LOGIN_FAILURE);
