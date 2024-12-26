@@ -8,6 +8,7 @@ import com.github.ecommerce.service.s3Image.AwsS3Service;
 import com.github.ecommerce.service.security.CustomUserDetails;
 import com.github.ecommerce.web.advice.ErrorCode;
 import com.github.ecommerce.web.dto.auth.Authority;
+import com.github.ecommerce.web.dto.auth.CheckedEmailRequest;
 import com.github.ecommerce.web.dto.auth.LoginRequest;
 import com.github.ecommerce.web.dto.auth.SignRequest;
 import lombok.RequiredArgsConstructor;
@@ -51,8 +52,8 @@ public class AuthService {
         }
     }
 
-    public boolean checkEmail(SignRequest signRequest){
-        String email = signRequest.getEmail();
+    public boolean checkedEmail(CheckedEmailRequest checkedEmailRequest){
+        String email = checkedEmailRequest.getEmail();
         if (authRepository.existsByEmail(email)) {
             log.warn("이메일이 이미 존재합니다: {}", email);
             throw new BadRequestException(ErrorCode.EMAIL_ALREADY_EXIST);
@@ -136,7 +137,7 @@ public class AuthService {
     }
 
     @Transactional(transactionManager = "tmJpa1")
-    public String secession() {
+    public boolean secession() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Integer userId = userDetails.getUserId();
@@ -151,6 +152,6 @@ public class AuthService {
         user.deleteUser();
         authRepository.save(user);
 
-        return "회원 탈퇴가 완료되었습니다.";
+        return true;
     }
 }
