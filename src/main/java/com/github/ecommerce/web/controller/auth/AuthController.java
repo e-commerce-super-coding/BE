@@ -15,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.apache.coyote.BadRequestException;
+
 
 
 @RestController
@@ -24,7 +24,7 @@ import org.apache.coyote.BadRequestException;
 public class AuthController {
     private final AuthService authService;
 
-    @PostMapping(value = "/email")
+    @GetMapping(value = "/email")
     public ResponseEntity<CheckedEmailResponse> checkEmail(@Valid@RequestBody CheckedEmailRequest emailCheckRequest, BindingResult bindingResult){
         if (bindingResult.hasErrors()) {
 //            String errorMessage = bindingResult.getFieldErrors().stream()
